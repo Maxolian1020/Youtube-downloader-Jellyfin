@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Spotify Downloader</title>
+</head>
+<body>
+    <div id="SpotifyDownloaderPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <h2>Spotify Downloader</h2>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="PlaylistSelect">Select playlist</label>
+                    <select id="PlaylistSelect" name="PlaylistSelect" is="emby-select" class="emby-select-withcolor emby-select"></select>
+                    <div class="fieldDescription">Choose the target playlist before importing a YouTube track.</div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button id="RefreshPlaylists" is="emby-button" class="raised button-submit block emby-button" type="button">
+                        <span>Refresh playlists</span>
+                    </button>
+                </div>
+                <div style="margin-top: 18px;" class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="PlaylistName">New playlist name</label>
+                    <input id="PlaylistName" name="PlaylistName" type="text" is="emby-input" />
+                    <div class="fieldDescription">Create a new playlist to hold imported tracks.</div>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="PlaylistDescription">Playlist description</label>
+                    <input id="PlaylistDescription" name="PlaylistDescription" type="text" is="emby-input" />
+                </div>
+                <div style="margin-top: 8px;">
+                    <button id="CreatePlaylist" is="emby-button" class="raised button-submit block emby-button" type="button">
+                        <span>Create playlist</span>
+                    </button>
+                </div>
+                <div style="margin-top: 24px;" class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="LibrarySelect">Select library</label>
+                    <select id="LibrarySelect" name="LibrarySelect" is="emby-select" class="emby-select-withcolor emby-select"></select>
+                    <div class="fieldDescription">Choose the Jellyfin library where downloads should be saved.</div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button id="RefreshLibraries" is="emby-button" class="raised button-submit block emby-button" type="button">
+                        <span>Refresh libraries</span>
+                    </button>
+                </div>
+                <div style="margin-top: 24px;" class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="YoutubeUrl">YouTube video or playlist URL</label>
+                    <input id="YoutubeUrl" name="YoutubeUrl" type="text" is="emby-input" />
+                    <div class="fieldDescription">Paste a YouTube video URL to import the audio into the selected playlist.</div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button id="ImportVideo" is="emby-button" class="raised button-submit block emby-button" type="button">
+                        <span>Import YouTube video</span>
+                    </button>
+                </div>
+                <div style="margin-top: 8px;">
+                    <button id="StartDownload" is="emby-button" class="raised button-submit block emby-button" type="button">
+                        <span>Start download for playlist</span>
+                    </button>
+                </div>
+                <div style="margin-top: 24px;" id="StatusMessage"></div>
+                <div id="PlaylistTracks" style="margin-top: 24px;"></div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            const backendBase = '/Plugins/SpotifyDownloader/Backend';
+
+            function showStatus(message, isError) {
+                const el = document.querySelector('#StatusMessage');
+                el.textContent = message;
+                el.style.color = isError ? '#c0392b' : '#2c3e50';
+            }
+
+            async function backendFetch(path, options = {}) {
+                const url = backendBase + path;
+                const response = await fetch(url, Object.assign({ credentials: 'same-origin' }, options));
+                const text = await response.text();
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                if (!response.ok) {
+                    let errorMessage = response.statusText;
+                    if (isJson) {
+                        try { errorMessage = JSON.parse(text).detail || JSON.parse(text).message || text; } catch { }
+                    }
+                    throw new Error(errorMessage || `HTTP ${response.status}`);
+                }
+                return isJson ? JSON.parse(text) : text;
+            }
+
+            async function loadPlaylists() {
+                try {
+                    showStatus('Loading playlists...', false);
+                    const data = await backendFetch('/playlists');
+                    const select = document.querySelector('#PlaylistSelect');
+                    select.innerHTML = '';
+                    data.items.forEach(function (playlist) {
+                        const option = document.createElement('option');
+                        option.value = playlist.id;
+                        option.textContent = `${playlist.name} (${playlist.track_count || 0} tracks)`;
+                        select.appendChild(option);
+                    });
+                    if (!data.items.length) {
+                        showStatus('No playlists found. Create one first.', false);
+                    } else {
+                        showStatus('Playlists loaded.', false);
+                        await loadPlaylistTracks(select.value);
+                    }
+                } catch (error) {
+                    showStatus('Unable to load playlists: ' + error.message, true);
+                }
+            }
+
+            async function loadLibraries() {
+                try {
+                    showStatus('Loading libraries...', false);
+                    // Use Jellyfin API to get virtual folders (libraries)
+                    const response = await fetch('/Library/VirtualFolders', {
+                        credentials: 'same-origin',
+                        headers: {
+                            'Authorization': 'MediaBrowser Token="' + window.ApiClient.accessToken() + '"',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to load libraries');
+                    }
+                    const data = await response.json();
+                    const select = document.querySelector('#LibrarySelect');
+                    select.innerHTML = '';
+                    
+                    // Add default option
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Use default library path';
+                    select.appendChild(defaultOption);
+                    
+                    data.forEach(function (folder) {
+                        // Only show music libraries
+                        if (folder.CollectionType === 'music' || !folder.CollectionType) {
+                            folder.Locations.forEach(function (location) {
+                                const option = document.createElement('option');
+                                option.value = location;
+                                option.textContent = `${folder.Name} (${location})`;
+                                select.appendChild(option);
+                            });
+                        }
+                    });
+                    
+                    showStatus('Libraries loaded.', false);
+                } catch (error) {
+                    showStatus('Unable to load libraries: ' + error.message, true);
+                }
+            }
+
+            document.querySelector('#RefreshLibraries').addEventListener('click', function () {
+                loadLibraries();
+            });
+
+            document.querySelector('#CreatePlaylist').addEventListener('click', async function () {
+                const name = document.querySelector('#PlaylistName').value.trim();
+                const description = document.querySelector('#PlaylistDescription').value.trim();
+                if (!name) {
+                    showStatus('Enter a playlist name first.', true);
+                    return;
+                }
+                try {
+                    showStatus('Creating playlist...', false);
+                    await backendFetch('/playlists', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, description }),
+                    });
+                    document.querySelector('#PlaylistName').value = '';
+                    document.querySelector('#PlaylistDescription').value = '';
+                    await loadPlaylists();
+                    showStatus('Playlist created.', false);
+                } catch (error) {
+                    showStatus('Failed to create playlist: ' + error.message, true);
+                }
+            });
+
+            document.querySelector('#ImportVideo').addEventListener('click', async function () {
+                const playlistId = document.querySelector('#PlaylistSelect').value;
+                const url = document.querySelector('#YoutubeUrl').value.trim();
+                const libraryPath = document.querySelector('#LibrarySelect').value;
+
+                if (!playlistId) {
+                    showStatus('Select a playlist first.', true);
+                    return;
+                }
+                if (!url) {
+                    showStatus('Enter a YouTube video URL.', true);
+                    return;
+                }
+
+                try {
+                    showStatus('Importing YouTube video...', false);
+                    const payload = { url, playlist_id: playlistId };
+                    if (libraryPath) {
+                        payload.output_dir = libraryPath;
+                    }
+                    const result = await backendFetch('/import/youtube-video', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    showStatus(`Imported video into playlist: ${result.playlist_id}`, false);
+                    document.querySelector('#YoutubeUrl').value = '';
+                    await loadPlaylistTracks(playlistId);
+                } catch (error) {
+                    showStatus('Import failed: ' + error.message, true);
+                }
+            });
+
+            document.querySelector('#StartDownload').addEventListener('click', async function () {
+                const playlistId = document.querySelector('#PlaylistSelect').value;
+                const libraryPath = document.querySelector('#LibrarySelect').value;
+
+                if (!playlistId) {
+                    showStatus('Select a playlist first.', true);
+                    return;
+                }
+
+                try {
+                    showStatus('Starting download job...', false);
+                    const payload = { 
+                        playlist_id: playlistId,
+                        output_dir: libraryPath || undefined
+                    };
+                    const result = await backendFetch('/download', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    showStatus(`Download job started: ${result.job_id}`, false);
+                } catch (error) {
+                    showStatus('Download failed: ' + error.message, true);
+                }
+            });
+
+            (async function initialize() {
+                showStatus('Connecting to Spotify Downloader backend...', false);
+                await loadLibraries();
+                await loadPlaylists();
+            })();
+        </script>
+    </div>
+</body>
+</html>

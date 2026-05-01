@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Spotify Downloader</title>
+</head>
+<body>
+    <div id="SpotifyDownloaderConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="SpotifyDownloaderConfigForm">
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="PythonExecutablePath">Python executable</label>
+                        <input id="PythonExecutablePath" name="PythonExecutablePath" type="text" is="emby-input" />
+                        <div class="fieldDescription">Path to the Python interpreter used to run the Spotify downloader backend.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="AppRootPath">Backend app root</label>
+                        <input id="AppRootPath" name="AppRootPath" type="text" is="emby-input" />
+                        <div class="fieldDescription">Directory containing the existing webapp files (app.py, static, templates, etc.).</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="BackendPort">Backend port</label>
+                        <input id="BackendPort" name="BackendPort" type="number" is="emby-input" min="1024" max="65535" />
+                        <div class="fieldDescription">Port where the plugin will start the backend service locally.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="WebAppUrl">Web app URL</label>
+                        <input id="WebAppUrl" name="WebAppUrl" type="text" is="emby-input" />
+                        <div class="fieldDescription">Optional frontend URL if you want to use the backend webapp directly.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="DownloadDirectory">Default save location</label>
+                        <input id="DownloadDirectory" name="DownloadDirectory" type="text" is="emby-input" />
+                        <div class="fieldDescription">Optional folder to store downloads. The backend can use this path if configured.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="DefaultLibraryPath">Default library path</label>
+                        <input id="DefaultLibraryPath" name="DefaultLibraryPath" type="text" is="emby-input" />
+                        <div class="fieldDescription">Path to the Jellyfin library folder where downloads should be saved (e.g., /path/to/music/library).</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="AutoStartBackend" name="AutoStartBackend" type="checkbox" is="emby-checkbox" />
+                            <span>Auto-start backend on Jellyfin startup</span>
+                        </label>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+                <div class="inputContainer" style="margin-top: 20px;">
+                    <button id="OpenWebAppLink" is="emby-button" class="raised button-submit block emby-button" type="button">
+                        <span>Open Spotify Downloader</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            const SpotifyDownloaderConfig = {
+                pluginUniqueId: '0ceab8c2-b4ce-45e5-9a67-02639a576057'
+            };
+
+            function loadConfig() {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(SpotifyDownloaderConfig.pluginUniqueId).then(function (config) {
+                    document.querySelector('#PythonExecutablePath').value = config.PythonExecutablePath || 'python';
+                    document.querySelector('#AppRootPath').value = config.AppRootPath || '';
+                    document.querySelector('#BackendPort').value = config.BackendPort || 8000;
+                    document.querySelector('#WebAppUrl').value = config.WebAppUrl || 'http://127.0.0.1:8000';
+                    document.querySelector('#DownloadDirectory').value = config.DownloadDirectory || '';
+                    document.querySelector('#DefaultLibraryPath').value = config.DefaultLibraryPath || '';
+                    document.querySelector('#AutoStartBackend').checked = config.AutoStartBackend || false;
+                    Dashboard.hideLoadingMsg();
+                });
+            }
+
+            document.querySelector('#SpotifyDownloaderConfigPage').addEventListener('pageshow', function () {
+                loadConfig();
+            });
+
+            document.querySelector('#SpotifyDownloaderConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+
+                ApiClient.getPluginConfiguration(SpotifyDownloaderConfig.pluginUniqueId).then(function (config) {
+                    config.PythonExecutablePath = document.querySelector('#PythonExecutablePath').value;
+                    config.AppRootPath = document.querySelector('#AppRootPath').value;
+                    config.BackendPort = parseInt(document.querySelector('#BackendPort').value, 10) || 8000;
+                    config.WebAppUrl = document.querySelector('#WebAppUrl').value;
+                    config.DownloadDirectory = document.querySelector('#DownloadDirectory').value;
+                    config.DefaultLibraryPath = document.querySelector('#DefaultLibraryPath').value;
+                    config.AutoStartBackend = document.querySelector('#AutoStartBackend').checked;
+
+                    ApiClient.updatePluginConfiguration(SpotifyDownloaderConfig.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
+            });
+
+            document.querySelector('#OpenWebAppLink').addEventListener('click', function () {
+                const url = document.querySelector('#WebAppUrl').value;
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>

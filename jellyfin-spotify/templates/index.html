@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Playlist Downloader</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Playlist Downloader</h1>
+    <p>Select a playlist from the local SQLite DB, then import single YouTube song links or download the playlist into artist/album folders.</p>
+    <p><a href="/review">Open Download Review</a></p>
+
+    <section class="card" id="playlist-card">
+      <h2>Playlists</h2>
+      <p class="meta">Playlists live in the local SQLite DB. Pick one, then paste a single YouTube song link to add it directly to that playlist.</p>
+      <div class="issues-actions">
+        <button id="refresh-playlists" type="button">Refresh Playlists</button>
+      </div>
+      <div class="issues-actions">
+        <input id="youtube_video_url" type="text" placeholder="YouTube video URL" />
+        <button id="import-youtube-video" type="button">Import YouTube Video</button>
+      </div>
+      <p class="meta">Import behavior: the selected playlist receives the song, the pasted video is saved as its download URL, metadata is looked up automatically, and YouTube thumbnails are not used as album art.</p>
+      <p id="playlist-meta" class="meta"></p>
+    </section>
+
+    <form id="download-form">
+      <label for="playlist_id">Playlist</label>
+      <select id="playlist_id" name="playlist_id" required></select>
+
+      <label for="mode">Mode</label>
+      <select id="mode" name="mode">
+        <option value="download">Download</option>
+        <option value="scan_issues">Scan + Flag Suspicious</option>
+        <option value="scan_missing">Scan Missing Files (DB vs Downloads)</option>
+        <option value="retry_issues">Retry Failed/Suspicious Only</option>
+      </select>
+
+      <label for="quality">Quality</label>
+      <select id="quality" name="quality">
+        <option value="320">320 kbps</option>
+        <option value="190">190 kbps</option>
+      </select>
+
+      <label for="output_dir">Output directory</label>
+      <input id="output_dir" name="output_dir" type="text" value="/home/massi/jellyfin-spotify/downloads" />
+
+      <button type="submit">Start Download</button>
+    </form>
+
+    <section class="card" id="issues-card">
+      <h2>Issue Review</h2>
+      <p class="meta">Load issues, check rows you want to fix, or set a manual YouTube URL for stubborn tracks.</p>
+      <div class="issues-actions">
+        <button id="load-issues" type="button">Load Issues</button>
+        <button id="resolve-issues" type="button">Confirm Selected Fixes</button>
+      </div>
+      <div id="issues-summary" class="meta"></div>
+      <div id="issues-list" class="details"></div>
+    </section>
+
+    <section id="status" class="card hidden">
+      <h2>Status</h2>
+      <div class="issues-actions">
+        <button id="pause-job" type="button">Pause</button>
+        <button id="resume-job" type="button">Resume</button>
+        <button id="stop-job" type="button">Stop</button>
+      </div>
+      <div id="summary"></div>
+      <div class="progress-wrap">
+        <div id="progress-bar"></div>
+      </div>
+      <div id="details" class="details"></div>
+      <pre id="failures"></pre>
+      <pre id="logs"></pre>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

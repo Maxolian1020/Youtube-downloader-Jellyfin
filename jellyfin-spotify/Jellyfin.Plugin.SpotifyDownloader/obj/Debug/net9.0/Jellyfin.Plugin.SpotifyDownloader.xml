@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Jellyfin.Plugin.SpotifyDownloader</name>
+    </assembly>
+    <members>
+        <member name="T:Jellyfin.Plugin.SpotifyDownloader.Configuration.PluginConfiguration">
+            <summary>
+            Plugin configuration.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.SpotifyDownloader.Plugin">
+            <summary>
+            The main plugin class.
+            </summary>
+        </member>
+    </members>
+</doc>

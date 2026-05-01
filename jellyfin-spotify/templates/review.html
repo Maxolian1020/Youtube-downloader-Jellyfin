@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Download Review</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>Download Review</h1>
+    <p>Review one track at a time. Approvals and overrides are persisted to SQLite so you can resume later.</p>
+    <p><a href="/">Back to downloader</a></p>
+
+    <section class="card">
+      <h2>Playlist</h2>
+      <div class="issues-actions">
+        <select id="review_playlist_id" required></select>
+        <button id="review_refresh_playlists" type="button">Refresh</button>
+        <button id="review_prev" type="button">Previous</button>
+        <button id="review_load_next" type="button">Load Next</button>
+      </div>
+      <div class="issues-actions">
+        <input id="review_search_query" type="text" placeholder="Search by artist, track, album, or saved title" />
+        <button id="review_search_btn" type="button">Search</button>
+      </div>
+      <div id="review_search_results" class="details"></div>
+      <p id="review_meta" class="meta"></p>
+    </section>
+
+    <section class="card" id="review_card">
+      <h2>Track</h2>
+      <div id="review_track" class="details">Loading...</div>
+      <audio id="review_audio" controls preload="metadata"></audio>
+      <div class="issues-actions">
+        <label class="meta"><input id="review_autoplay" type="checkbox" checked /> Auto-play local file</label>
+        <button id="review_open_url" type="button">Open Download URL</button>
+        <button id="review_approve" type="button">Approve</button>
+      </div>
+      <div class="issues-actions">
+        <input id="review_manual_url" type="text" placeholder="Paste replacement YouTube URL (will mark for re-download)" />
+        <input id="review_manual_title" type="text" placeholder="Optional title override" />
+        <button id="review_set_manual" type="button">Set Manual Link + Flag Redownload</button>
+      </div>
+      <div class="issues-actions">
+        <input id="review_notes" type="text" placeholder="Optional notes" />
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/review.js"></script>
+</body>
+</html>
