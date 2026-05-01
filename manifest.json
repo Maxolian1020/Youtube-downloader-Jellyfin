@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Spotify Downloader",
+    "overview": "Download Spotify playlists and import YouTube videos directly into your Jellyfin library",
+    "owner": "Maxolian1020",
+    "category": "Metadata",
+    "description": "A Jellyfin plugin that integrates with a Python backend to download Spotify playlists and YouTube videos. Supports playlist management, library selection, and automatic metadata tagging.",
+    "guid": "0ceab8c2-b4ce-45e5-9a67-02639a576057",
+    "version": "1.0.0.0",
+    "targetAbi": "10.11.0.0",
+    "sourceUrl": "https://github.com/Maxolian1020/Youtube-downloader-Jellyfin",
+    "sourceRepositoryUrl": "https://github.com/Maxolian1020/Youtube-downloader-Jellyfin",
+    "branch": "main",
+    "releaseNotes": [
+      "Initial release with Jellyfin plugin integration",
+      "User-facing import page with playlist and library selection",
+      "Admin configuration page for backend setup",
+      "Support for YouTube video import and Spotify playlist downloads",
+      "Direct integration with Jellyfin libraries"
+    ],
+    "changelog": [
+      {
+        "version": "1.0.0.0",
+        "description": "Initial release with full Jellyfin plugin support, user interface, library selection, and admin configuration"
+      }
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/Maxolian1020/Youtube-downloader-Jellyfin/main/icon.png",
+    "imageColorDark": "#1a1a1a",
+    "imageColorLight": "#ffffff",
+    "dependencies": [
+      {
+        "name": "MediaBrowser.Common",
+        "minVersion": "10.11.0.0"
+      },
+      {
+        "name": "MediaBrowser.Controller",
+        "minVersion": "10.11.0.0"
+      }
+    ]
+  }
+]
