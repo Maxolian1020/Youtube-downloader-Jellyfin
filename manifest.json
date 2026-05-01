@@ -8,6 +8,7 @@
     "guid": "0ceab8c2-b4ce-45e5-9a67-02639a576057",
     "version": "1.0.0.0",
     "targetAbi": "10.11.0.0",
+    "pluginUrl": "https://github.com/Maxolian1020/Youtube-downloader-Jellyfin/releases/download/v1.0.0/Jellyfin.Plugin.SpotifyDownloader.dll",
     "sourceUrl": "https://github.com/Maxolian1020/Youtube-downloader-Jellyfin",
     "sourceRepositoryUrl": "https://github.com/Maxolian1020/Youtube-downloader-Jellyfin",
     "branch": "main",
